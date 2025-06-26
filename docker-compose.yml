@@ -1,0 +1,40 @@
+#  Version de la syntaxe Docker Compose
+version: '3.8'
+
+# Ddes services Docker (conteneurs)
+services:
+  db:
+    image: postgres:15           #  Utilise l’image officielle de PostgreSQL version 15
+    environment:
+      POSTGRES_DB: mydb          #  Nom de la base créée automatiquement
+      POSTGRES_USER: postgres    #  Utilisateur de la base
+      POSTGRES_PASSWORD: postgres # Mot de passe
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Volume pour sauvegarder les données (même après redémarrage)
+    ports:
+      - "5432:5432"              # Le port PostgreSQL (5432) est exposé pour accéder à la base si besoin
+
+  backend:
+    build:
+      context: ./backend         #  Dossier où se trouve le Dockerfile de Spring Boot
+    ports:
+      - "8080:8080"              #  Expose le port 8080 → accessible via http://localhost:8080
+    depends_on:
+      - db                      #  Le backend démarre après que PostgreSQL est prêt
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/mydb      # 🔗 URL JDBC pour se connecter à la base
+      SPRING_DATASOURCE_USERNAME: postgres                       # 👤 identifiant
+      SPRING_DATASOURCE_PASSWORD: postgres                       # 🔐 mot de passe
+
+  
+  frontend:
+    build:
+      context: ./frontend        #  Dossier où se trouve le Dockerfile de Angular
+    ports:
+      - "4200:80"                #  Angular sera accessible sur localhost:4200 (80 = port Nginx)
+    depends_on:
+      - backend                  #  Angular démarre après le backend
+
+#  Volume persistant pour PostgreSQL
+volumes:
+  pgdata:
